@@ -4,7 +4,6 @@
 rm snapshot_extension.sh
 
 # Prompt user to select IOTA or Shimmer
-options=("IOTA" "Shimmer")
 select_network=$(whiptail --title "Select Network" --radiolist \
 "Which network do you want to use?" 20 60 10 \
 "IOTA" "Use IOTA network" ON \
