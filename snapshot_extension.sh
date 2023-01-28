@@ -1,5 +1,8 @@
 #!/bin/bash
 
+# Remove this script
+rm snapshot_extension.sh
+
 # Prompt user to select IOTA or Shimmer
 options=("IOTA" "Shimmer")
 select_network=$(whiptail --title "Select Network" --radiolist \
