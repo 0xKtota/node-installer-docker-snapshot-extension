@@ -1,4 +1,4 @@
-# node-installer-docker-snapshot-extension
+# node-installer-docker_snapshot-extension
 This is an unofficial extension for the *node-installer-docker* project by DLT.green. The installer of dlt.green allows you to easily run an IOTA or Shimmer Hornet node (and more) on your machine using Docker. 
 
 This script helps you to download a snapshot for the Hornet node software, allowing you to start your ledger history from a specific point in time.
@@ -12,7 +12,7 @@ Before using the script, make sure that you have already installed the *node-ins
 To download and run the script, use the following command:
 
 
-`wget https://raw.githubusercontent.com/0xKtota/node-installer-docker-snapshot-extension/master/snapshot_extension.sh && sudo bash snapshot_extension.sh`
+`wget https://raw.githubusercontent.com/0xKtota/node-installer-docker_snapshot-extension/master/snapshot_extension.sh && sudo bash snapshot_extension.sh`
 
 
 This command will download the script from GitHub and run it using the bash command.
