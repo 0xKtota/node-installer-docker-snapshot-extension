@@ -9,6 +9,11 @@ select_network=$(whiptail --title "Select Network" --radiolist \
 "IOTA" "Use IOTA network" ON \
 "Shimmer" "Use Shimmer network" OFF 3>&1 1>&2 2>&3)
 
+if [ $? -eq 1 ]; then
+  echo "Cancelled. Exiting program."
+  exit 0
+fi
+
 # Set variables based on user's selection
 if [ "$select_network" == "IOTA" ]; then
   network_name="iota"
@@ -17,6 +22,7 @@ else
   network_name="shimmer"
   network_container_name="shimmer-hornet"
 fi
+
 
 show_logs () {
   docker compose logs -f --tail 1000
@@ -38,20 +44,28 @@ rm -rf /var/lib/${network_container_name}/data/p2pstore/mainnet/*
 
 cd /var/lib/${network_container_name}/data/snapshots/mainnet/
 
-if [ "$network_name" == "IOTA" ]; then
+if [ "$network_name" == "iota" ]; then
   
-  url=$(whiptail --title "Download snapshot" --inputbox "IOTA Staking Round 4 - Full Snapshot
-  
-  https://chrysalis-dbfiles.iota.org/snapshots/hornet/2022-11-04T06%3A14%3A34Z-4784523-full_snapshot.bin
-
-  Please enter the snapshot-link:" 10 80 "https://chrysalis-dbfiles.iota.org/snapshots/hornet/2022-11-04T06%3A14%3A34Z-4784523-full_snapshot.bin" 3>&1 1>&2 2>&3)
+  url=$(whiptail --title "Download snapshot" --inputbox "\n
+IOTA Staking Round 4 - Full Snapshot
+https://chrysalis-dbfiles.iota.org/snapshots/hornet/2022-11-04T06%3A14%3A34Z-4784523-full_snapshot.bin
+\n
+IOTA Staking Round 5 - Full Snapshot
+https://chrysalis-dbfiles.iota.org/snapshots/hornet/2023-01-09T02%3A55%3A01Z-5353514-full_snapshot.bin
+\n
+Please enter the snapshot-link:" 20 80 "https://chrysalis-dbfiles.iota.org/snapshots/hornet/2023-01-09T02%3A55%3A01Z-5353514-full_snapshot.bin" 3>&1 1>&2 2>&3)
 
 else
-  url=$(whiptail --title "Download snapshot" --inputbox "Shimmer 07/02/2023 - Full Snapshot
-  
-  https://files.shimmer.shimmer.network/snapshots/2023-02-06T22%3A40%3A05Z-2284688-full_snapshot.bin
+  url=$(whiptail --title "Download snapshot" --inputbox "\n
+Shimmer 07/02/2023 - Full Snapshot
+https://files.shimmer.shimmer.network/snapshots/2023-02-06T22%3A40%3A05Z-2284688-full_snapshot.bin
+\n
+Please enter the snapshot-link:" 15 80 "https://files.shimmer.shimmer.network/snapshots/2023-02-06T22%3A40%3A05Z-2284688-full_snapshot.bin" 3>&1 1>&2 2>&3)
+fi
 
-  Please enter the snapshot-link:" 10 80 "https://files.shimmer.shimmer.network/snapshots/2023-02-06T22%3A40%3A05Z-2284688-full_snapshot.bin" 3>&1 1>&2 2>&3)
+if [ $? -eq 1 ]; then
+  echo "Cancelled. Exiting program."
+  exit 0
 fi
 
 # Use wget to download the file
