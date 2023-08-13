@@ -1,5 +1,40 @@
 #!/bin/bash
 
+# --- Functions ---
+
+cleanup() {
+    # Remove old directories and files
+    rm -rf /var/lib/${network_container_name}/data/storage/mainnet/*
+    rm -rf /var/lib/${network_container_name}/data/snapshots/mainnet/*
+    rm -rf /var/lib/${network_container_name}/data/p2pstore/mainnet/*
+}
+
+show_logs() {
+    docker compose logs -f --tail 1000
+}
+
+rename_container() {
+    docker container rename "${network_container_name}_hornet_1" "${network_container_name}" >/dev/null 2>&1
+    docker container rename "${network_container_name}_traefik_1" "${network_container_name}.traefik" >/dev/null 2>&1
+}
+
+download_snapshot() {
+    # Use wget to download the file
+    wget $url || { echo "Error downloading snapshot. Exiting."; exit 1; }
+
+    # Convert special characters in the file name
+    file_name=$(echo $url | sed 's/%3A/:/g')
+
+    # Extract the last part of the file name
+    file_name_parts=($(echo $file_name | tr '/' ' '))
+    file_name_end=${file_name_parts[-1]}
+
+    # Rename the downloaded file
+    mv $file_name_end full_snapshot.bin
+}
+
+# --- Main script starts here ---
+
 # Remove this script
 rm snapshot_extension.sh
 
@@ -10,43 +45,29 @@ select_network=$(whiptail --title "Select Network" --radiolist \
 "Shimmer" "Use Shimmer network" OFF 3>&1 1>&2 2>&3)
 
 if [ $? -eq 1 ]; then
-  echo "Cancelled. Exiting program."
-  exit 0
+    echo "Cancelled. Exiting program."
+    exit 0
 fi
 
 # Set variables based on user's selection
 if [ "$select_network" == "IOTA" ]; then
-  network_name="iota"
-  network_container_name="iota-hornet"
+    network_name="iota"
+    network_container_name="iota-hornet"
 else
-  network_name="shimmer"
-  network_container_name="shimmer-hornet"
+    network_name="shimmer"
+    network_container_name="shimmer-hornet"
 fi
-
-
-show_logs () {
-  docker compose logs -f --tail 1000
-}
-
-rename_container() {
-  docker container rename "${network_container_name}_hornet_1" "${network_container_name}" >/dev/null 2>&1
-  docker container rename "${network_container_name}_traefik_1" "${network_container_name}.traefik" >/dev/null 2>&1
-}
 
 if [ -d /var/lib/${network_container_name} ]; then
-  cd /var/lib/${network_container_name}
-  docker-compose down
+    cd /var/lib/${network_container_name}
+    docker-compose down
+    cleanup
 fi
-
-rm -rf /var/lib/${network_container_name}/data/storage/mainnet/*
-rm -rf /var/lib/${network_container_name}/data/snapshots/mainnet/*
-rm -rf /var/lib/${network_container_name}/data/p2pstore/mainnet/*
 
 cd /var/lib/${network_container_name}/data/snapshots/mainnet/
 
 if [ "$network_name" == "iota" ]; then
-  
-  url=$(whiptail --title "Download snapshot" --inputbox "\n
+    url=$(whiptail --title "Download snapshot" --inputbox "\n
 IOTA Staking Round 4 - Full Snapshot
 https://chrysalis-dbfiles.iota.org/snapshots/hornet/2022-11-04T06%3A14%3A34Z-4784523-full_snapshot.bin
 \n
@@ -54,9 +75,8 @@ IOTA Staking Round 5 - Full Snapshot
 https://chrysalis-dbfiles.iota.org/snapshots/hornet/2023-01-09T02%3A55%3A01Z-5353514-full_snapshot.bin
 \n
 Please enter the snapshot-link:" 20 80 "https://chrysalis-dbfiles.iota.org/snapshots/hornet/2023-01-09T02%3A55%3A01Z-5353514-full_snapshot.bin" 3>&1 1>&2 2>&3)
-
 else
-  url=$(whiptail --title "Download snapshot" --inputbox "\n
+    url=$(whiptail --title "Download snapshot" --inputbox "\n
 Shimmer 07/02/2023 - Full Snapshot
 https://files.shimmer.shimmer.network/snapshots/2023-02-06T22%3A40%3A05Z-2284688-full_snapshot.bin
 \n
@@ -64,28 +84,16 @@ Please enter the snapshot-link:" 15 80 "https://files.shimmer.shimmer.network/sn
 fi
 
 if [ $? -eq 1 ]; then
-  echo "Cancelled. Exiting program."
-  exit 0
+    echo "Cancelled. Exiting program."
+    exit 0
 fi
 
-# Use wget to download the file
-wget $url
-
-# Convert special characters in the file name
-file_name=$(echo $url | sed 's/%3A/:/g')
-
-# Extract the last part of the file name
-file_name_parts=($(echo $file_name | tr '/' ' '))
-file_name_end=${file_name_parts[-1]}
-
-# Rename the downloaded file
-mv $file_name_end full_snapshot.bin
+download_snapshot
 
 if [ -d /var/lib/${network_container_name} ]; then
-  cd /var/lib/${network_container_name}
-  docker-compose up -d
+    cd /var/lib/${network_container_name}
+    docker-compose up -d || { echo "Error starting containers. Exiting."; exit 1; }
 fi
 
 rename_container
-
 show_logs
