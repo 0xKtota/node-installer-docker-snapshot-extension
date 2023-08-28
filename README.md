@@ -37,4 +37,3 @@ If you want to support me, feel free to send me some coins:
 `smr1qzat2kgt5v2v2ussnxytyqwzaqke8g50sakv8wwh7uf2sdcnl8ztc3sgd42`
 
 to support the DLT.GREEN TREASURY please use the link above.
-
