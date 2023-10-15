@@ -16,7 +16,7 @@ cleanup() {
     if [[ $confirm == [yY] || $confirm == [yY][eE][sS] ]]; then
         rm -rf "/var/lib/${network_container_name}/data/storage/mainnet/*"
         rm -rf "/var/lib/${network_container_name}/data/snapshots/mainnet/*"
-        rm -rf "/var/lib/${network_container_name}/data/p2pstore/mainnet/*"
+       # rm -rf "/var/lib/${network_container_name}/data/p2pstore/mainnet/*"
     else
         echo "Cleanup aborted."
     fi
@@ -27,9 +27,27 @@ show_logs() {
 }
 
 rename_container() {
+    # Common renaming for both networks
     docker container rename "${network_container_name}_hornet_1" "${network_container_name}" >/dev/null 2>&1
     docker container rename "${network_container_name}_traefik_1" "${network_container_name}.traefik" >/dev/null 2>&1
+    docker container rename "${network_container_name}_grafana_1" "grafana" >/dev/null 2>&1
+    docker container rename "${network_container_name}_prometheus_1" "prometheus" >/dev/null 2>&1
+    
+    local services=("inx-participation" "inx-dashboard" "inx-indexer" "inx-poi" "inx-spammer" "inx-mqtt")
+    for service in "${services[@]}"; do
+        docker container rename "${network_container_name}_${service}_1" "${network_container_name}.${service}" >/dev/null 2>&1
+    done
+
+    # Specific renaming for IOTA and Shimmer
+    if [ "$network_name" == "iota" ]; then
+        docker container rename "iota-wasp_traefik_1" "iota-wasp.traefik" >/dev/null 2>&1
+        docker container rename "iota-wasp_wasp_1" "iota-wasp" >/dev/null 2>&1
+    else
+        docker container rename "shimmer-wasp_traefik_1" "shimmer-wasp.traefik" >/dev/null 2>&1
+        docker container rename "shimmer-wasp_wasp_1" "shimmer-wasp" >/dev/null 2>&1
+    fi
 }
+
 
 download_snapshot() {
     wget "$url" || { echo "Error downloading snapshot. Exiting."; exit 1; }
@@ -73,13 +91,13 @@ cd "/var/lib/${network_container_name}/data/snapshots/mainnet/" || { echo "Canno
 
 if [ "$network_name" == "iota" ]; then
     url=$(whiptail --title "Download snapshot" --inputbox "\n
-IOTA Staking Round 6 - TangleBay Snapshot - Full Snapshot
-https://cdn.tanglebay.com/snapshots/iota-mainnet/events/full_snapshot-asmb6.bin
+Latest IOTA TangleBay - Full Snapshot
+https://cdn.tanglebay.com/snapshots/iota-mainnet/full_snapshot.bin
 \n
-Please enter the snapshot-link:" 20 80 "https://cdn.tanglebay.com/snapshots/iota-mainnet/events/full_snapshot-asmb6.bin" 3>&1 1>&2 2>&3)
+Please enter the snapshot-link:" 20 80 "https://cdn.tanglebay.com/snapshots/iota-mainnet/full_snapshot.bin" 3>&1 1>&2 2>&3)
 else
     url=$(whiptail --title "Download snapshot" --inputbox "\n
-Shimmer 11/08/2023 - Full Snapshot
+Latest Shimmer TangleBay - Full Snapshot
 https://cdn.tanglebay.com/snapshots/shimmer-mainnet/full_snapshot.bin
 \n
 Please enter the snapshot-link:" 15 80 "https://cdn.tanglebay.com/snapshots/shimmer-mainnet/full_snapshot.bin" 3>&1 1>&2 2>&3)
@@ -94,5 +112,5 @@ if [ -d "/var/lib/${network_container_name}" ]; then
     docker-compose up -d || { echo "Error starting containers. Exiting."; exit 1; }
 fi
 
-rename_container
+rename_container; sleep 3
 show_logs
